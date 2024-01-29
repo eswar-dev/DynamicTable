@@ -7,8 +7,8 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
-import Snackbar from '@material-ui/core/Snackbar';
-import MuiAlert from '@material-ui/lab/Alert';
+import Snackbar from "@material-ui/core/Snackbar";
+import MuiAlert from "@material-ui/lab/Alert";
 import {
   Select,
   InputLabel,
@@ -19,10 +19,9 @@ import {
   Typography,
 } from "@mui/material";
 import axios from "axios";
-import OutlinedInput from '@mui/material/OutlinedInput';
-import ListItemText from '@mui/material/ListItemText';
-import Checkbox from '@mui/material/Checkbox';
-import TableRowItem from "./Table";
+import OutlinedInput from "@mui/material/OutlinedInput";
+import ListItemText from "@mui/material/ListItemText";
+import Checkbox from "@mui/material/Checkbox";
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
 const MenuProps = {
@@ -33,31 +32,6 @@ const MenuProps = {
     },
   },
 };
-const months = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
-const dynamicColumns = months.map((month) => ({
-  id: month.toLowerCase(),
-  label: month,
-  minWidth: 170,
-  align: "right",
-  format: (value) => value.toFixed(2),
-}));
-
-function createData(rowLabel, dynamicColumn, Qty) {
-  return { rowLabel, dynamicColumn, Qty };
-}
 
 function Alert(props) {
   return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -67,17 +41,15 @@ export default function StickyHeadTable() {
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(10);
   const [data, setData] = useState([]);
-  const [file, setFile] = useState(null);
-  const [rows, setRows] = useState([]);
-  const [selectedFilter, setSelectedFilter] = useState("");
-  const [disabled, setDisabled] = useState(true);
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef(null);
+  const [tableData, setTableData] = useState();
+
   const [filters, setFilters] = React.useState({
     segmentLeadership: [],
     status: [],
     brand: [],
-    rows: ['DRNAME','SPECIALTY']
+    rows: ["Spl"],
   });
 
   const handleChange = (event, filterName) => {
@@ -87,75 +59,27 @@ export default function StickyHeadTable() {
 
     setFilters((prevFilters) => ({
       ...prevFilters,
-      [filterName]: typeof value === 'string' ? value.split(',') : value,
+      [filterName]: typeof value === "string" ? value.split(",") : value,
     }));
   };
-  const handleChangeFilter = (event) => {
-    const selectedFilter = event.target.value;
-    setSelectedFilter(selectedFilter);
-    updateRows(selectedFilter);
-  };
+
   const handleClose = (event, reason) => {
-    if (reason === 'clickaway') {
+    if (reason === "clickaway") {
       return;
     }
 
     setOpen(false); // Close Snackbar
   };
-  const updateRows = (filter) => {
-    // Use Set to keep track of unique row labels and dynamic columns
-    const uniqueRowLabels = new Set();
-    const uniqueDynamicColumns = new Set();
-
-    // Map the fetched data to create rows with dynamic labels
-    const updatedRows = data.reduce((rows, dataItem) => {
-      const rowLabel = dataItem[filter];
-
-      // Check if the row label is not already in the Set
-      if (!uniqueRowLabels.has(rowLabel)) {
-        uniqueRowLabels.add(rowLabel);
-
-        // Check if the dynamic column is not already in the Set
-        // if (!uniqueDynamicColumns.has(dynamicColumn)) {
-        //   uniqueDynamicColumns.add(dynamicColumn);
-
-        const rowData = {
-          rowLabel,
-          dynamicColumn: dataItem.Month,
-          Qty: dataItem.Qty,
-        };
-
-        // Assuming createData is a function to create a data object
-        rows.push(createData(rowData.rowLabel, rowData.dynamicColumn, rowData.Qty));
-        // }
-      }
-
-      return rows;
-    }, []);
-
-    // Set the updated rows
-    setRows(updatedRows);
-  };
-
-
-  // const handleFileChange = (e) => {
-  //   setFile(e.target.files[0]);
-
-  // };
-
 
   const handleFileChange = async () => {
     const selectedFile = fileInputRef.current.files[0];
-    // Handle file change logic here
-    console.log("Selected File:", selectedFile);
 
-    // API call to upload the file
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append("file", selectedFile);
 
-      const response = await fetch('http://localhost:5000/upload', {
-        method: 'POST',
+      const response = await fetch("http://localhost:5000/upload", {
+        method: "POST",
         body: formData,
       });
 
@@ -173,23 +97,11 @@ export default function StickyHeadTable() {
     }
   };
 
-
-  const uploadFile = async () => {
-    const formData = new FormData();
-    formData.append("file", file);
-    setDisabled(false);
-    try {
-      await axios.post("http://localhost:5000/upload", formData);
-      fetchData();
-    } catch (error) {
-      console.error("Error uploading file:", error);
-    }
-  };
-
   const fetchData = async (filters) => {
     try {
-      const response = await axios.get(`http://localhost:5000/Qty-data?items=${filters.rows.join('&items=')}`);
-      console.log(response,'res')
+      const response = await axios.get(
+        `http://localhost:5000/Qty-data?items=${filters.rows.join("&items=")}`
+      );
       setData(response.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -200,126 +112,113 @@ export default function StickyHeadTable() {
     fetchData(filters);
   }, [filters]);
 
-  useEffect(() => {
-    // Call updateRows when the data is fetched or selected filter changes
-    if (selectedFilter) {
-      updateRows(selectedFilter);
-    }
-  }, [data, selectedFilter]);
-  const columns = ["Row Label", ...rows.map((col) => col.dynamicColumn)];
   const handleButtonClick = () => {
     fileInputRef.current.click(); // Trigger click event on file input
   };
 
-  // const handleChange = (event) => {
-  //   const {
-  //     target: { value },
-  //   } = event;
-  //   setPersonName(
-  //     // On autofill we get a stringified value.
-  //     typeof value === 'string' ? value.split(',') : value,
-  //   );
-  // };
-  const segmentLeadership = [
-    'All',
-    'yes',
-    'no'
-  ];
+  const segmentLeadership = ["All", "yes", "no"];
   const brand = [
-    'All',
-    'NINTIB',
-    'Montair LC Adult',
-    'Furamist',
-    'Ablung',
-    'Montair',
-    'Montair LC Kids',
-    'Levolin Plus',
-
+    "All",
+    "NINTIB",
+    "Montair LC Adult",
+    "Furamist",
+    "Ablung",
+    "Montair",
+    "Montair LC Kids",
+    "Levolin Plus",
   ];
 
   const rowsFilter = [
-    'BU',
-    'TASKFORCE',
-    'ZMHQ',
-    'RMHQ',
-    'ABM HQ',
-    'TM HQ',
-    'TM Name',
-    'Month',
-    'MSL CODE',
-    'DRNAME',
-    'SPECIALTY',
-    'Spl',
-    'Class',
-    'SKU Name',
-    'BRAND',
-    'Segment Leadership',
-    'Status 2k',
-    'Status 5k' 
+    "BU",
+    "TASKFORCE",
+    "ZMHQ",
+    "RMHQ",
+    "ABM HQ",
+    "TM HQ",
+    "TM Name",
+    "Month",
+    "MSL CODE",
+    "DRNAME",
+    "SPECIALTY",
+    "Spl",
+    "Class",
+    "SKU Name",
+    "BRAND",
+    "Segment Leadership",
+    "Status 2k",
+    "Status 5k",
   ];
-  const status = [
-    'All',
-    'Above 2k',
-    'Below 2k'
-  ];
+  const status = ["All", "Above 2k", "Below 2k"];
 
-  const tabledata = [
-    {
-      id: 1,
-      name: 'A',
-      children: [
-        {
-          id: 23,
-          name: 'Montair',
-          children: [{ id: 10101, name: 'Cardio' }, { id: 10102, name: 'Chest' }],
-        },
-        {
-          id: 21,
-          name: 'Team 4',
-          children: [{ id: 10201, name: 'CP' }, { id: 10202, name: 'ENT' }],
-        },
-      ],
-    },
-    {
-      id: 2,
-      name: 'A Plus',
-      children: [
-        {
-          id: 21,
-          name: 'Team 4',
-          children: [{ id: 10101, name: 'Cardio' }, { id: 10102, name: 'Chest' }],
-        },
-        {
-          id: 25,
-          name: 'Team 4',
-          children: [{ id: 10201, name: 'CP' }, { id: 10202, name: 'ENT' }],
-        },
-      ],
-    },
-    {
-      id: 3,
-      name: 'B',
-      children: [
-        {
-          id: 21,
-          name: 'Team 4',
-          children: [{ id: 10101, name: 'Cardio' }, { id: 10102, name: 'Chest' }],
-        },
-        {
+  useEffect(() => {
+    if (data.aggregatedResults !== undefined) {
+      const rowData = [];
 
-          name: 'Team 4',
-          children: [{ id: 10201, name: 'CP' }, { id: 10202, name: 'ENT' }],
-        },
-      ],
-    },
-  ];
+      // Initialize newColData and newRowData arrays outside the loop
+      const newColData = [];
+      const newRowData = [];
 
+      // Iterate through each key in data.aggregatedResults
+      Object.entries(data.aggregatedResults).forEach(([key, value]) => {
+        if (filters.rows.includes(key)) {
+          // Calculate newColData and newRowData for each key
+          const items = Object.entries(value);
+          const monthsSet = new Set(); // Use a Set to store unique months
+
+          items.forEach(([, item]) => {
+            if (item.monthlyCounts) {
+              Object.keys(item.monthlyCounts).forEach((month) => {
+                monthsSet.add(month); // Add each month to the Set
+              });
+            }
+          });
+
+          const months = Array.from(monthsSet); // Convert Set back to array
+          const rows = items.map(([label, item]) => {
+            const rowData = { label };
+            months.forEach((month) => {
+              rowData[month] =
+                item.monthlyCounts && item.monthlyCounts[month]
+                  ? item.monthlyCounts[month]
+                  : "-";
+            });
+            rowData.total = item.total;
+            return rowData;
+          });
+
+          // Concatenate newColData and newRowData for each key with the existing arrays
+          newColData.push(months);
+          newRowData.push(rows);
+        }
+      });
+
+      // Merge duplicate-free newColData into a single array
+      const mergedNewColData = Array.from(
+        newColData.reduce((set, arr) => {
+          arr.forEach((item) => set.add(item));
+          return set;
+        }, new Set())
+      );
+
+      // Push newColData and newRowData to rowData
+      rowData.push({
+        newColData: mergedNewColData.flat(),
+        newRowData: newRowData.flat(),
+      });
+
+      setTableData(rowData);
+    } else {
+      setTableData([]);
+    }
+  }, [data, filters]);
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
-      <Grid container display={'flex'} justifyContent={'space-between'} m={2}>
-        <Grid item >
-          <Typography fontWeight={700} fontSize={'22px'}>Data Visualization</Typography>
+      <Grid container display={"flex"} justifyContent={"space-between"} m={2}>
+        <Grid item>
+          <Typography fontWeight={700} fontSize={"22px"}>
+            Data Visualization
+          </Typography>
         </Grid>
         <Grid item mr={4}>
           <input
@@ -327,41 +226,48 @@ export default function StickyHeadTable() {
             accept=".xlsx"
             onChange={handleFileChange}
             ref={fileInputRef}
-            style={{ display: 'none' }} // Hide the file input
+            style={{ display: "none" }} // Hide the file input
           />
-          <Button variant="contained" onClick={handleButtonClick} sx={{ textTransform: 'none' }}>
+          <Button
+            variant="contained"
+            onClick={handleButtonClick}
+            sx={{ textTransform: "none" }}
+          >
             Choose File
           </Button>
           <Snackbar
             open={open}
             autoHideDuration={3000}
             onClose={handleClose}
-            anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            anchorOrigin={{ vertical: "top", horizontal: "right" }}
           >
             <Alert onClose={handleClose} severity="success">
               File uploaded successfully!
             </Alert>
           </Snackbar>
         </Grid>
-
       </Grid>
-      <Grid container display={'flex'} gap={3.8}>
+      <Grid container display={"flex"} gap={3.8}>
         <Grid item>
           <FormControl sx={{ m: 1, width: 350 }}>
-            <InputLabel id="segment-leadership-label">Segment Leadership</InputLabel>
+            <InputLabel id="segment-leadership-label">
+              Segment Leadership
+            </InputLabel>
             <Select
               labelId="segment-leadership-label"
               id="segment-leadership"
               multiple
               value={filters.segmentLeadership}
-              onChange={(e) => handleChange(e, 'segmentLeadership')}
+              onChange={(e) => handleChange(e, "segmentLeadership")}
               input={<OutlinedInput label="Segment Leadership" />}
-              renderValue={(selected) => selected.join(', ')}
+              renderValue={(selected) => selected.join(", ")}
               MenuProps={MenuProps}
             >
               {segmentLeadership.map((name) => (
                 <MenuItem key={name} value={name}>
-                  <Checkbox checked={filters.segmentLeadership.indexOf(name) > -1} />
+                  <Checkbox
+                    checked={filters.segmentLeadership.indexOf(name) > -1}
+                  />
                   <ListItemText primary={name} />
                 </MenuItem>
               ))}
@@ -376,9 +282,9 @@ export default function StickyHeadTable() {
               id="status"
               multiple
               value={filters.status}
-              onChange={(e) => handleChange(e, 'status')}
+              onChange={(e) => handleChange(e, "status")}
               input={<OutlinedInput label="Status" />}
-              renderValue={(selected) => selected.join(', ')}
+              renderValue={(selected) => selected.join(", ")}
               MenuProps={MenuProps}
             >
               {status.map((name) => (
@@ -398,9 +304,9 @@ export default function StickyHeadTable() {
               id="brand"
               multiple
               value={filters.brand}
-              onChange={(e) => handleChange(e, 'brand')}
+              onChange={(e) => handleChange(e, "brand")}
               input={<OutlinedInput label="Brand" />}
-              renderValue={(selected) => selected.join(', ')}
+              renderValue={(selected) => selected.join(", ")}
               MenuProps={MenuProps}
             >
               {brand.map((name) => (
@@ -421,9 +327,9 @@ export default function StickyHeadTable() {
               id="brand"
               multiple
               value={filters.rows}
-              onChange={(e) => handleChange(e, 'rows')}
+              onChange={(e) => handleChange(e, "rows")}
               input={<OutlinedInput label="Row Filter" />}
-              renderValue={(selected) => selected.join(', ')}
+              renderValue={(selected) => selected.join(", ")}
               MenuProps={MenuProps}
             >
               {rowsFilter.map((name) => (
@@ -436,30 +342,70 @@ export default function StickyHeadTable() {
           </FormControl>
         </Grid>
       </Grid>
-      <div style={{ height: '530px', overflowY: 'auto', margin: 2 }}>
-        <TableContainer component={Paper}>
-          <Table aria-label="collapsible table" style={{ borderCollapse: 'collapse' }}>
-            <TableHead sx={{ backgroundColor: '#f0f0f0', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}>
-              <TableRow>
-                <TableCell />
-                <TableCell sx={{ fontWeight: 600, fontSize: '18px', border: '1px solid #dddddd' }}>Row Label</TableCell>
-                <TableCell sx={{ fontWeight: 600, fontSize: '18px', border: '1px solid #dddddd' }}>Nov-23</TableCell>
-                <TableCell sx={{ fontWeight: 600, fontSize: '18px', border: '1px solid #dddddd' }}>Dec-23</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {tabledata.map((row) => (
-                <TableRowItem key={row.id} row={row} />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
+      <div style={{ height: "530px", overflowY: "auto", margin: 2 }}>
+        <React.Fragment>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell
+                    sx={{
+                      backgroundColor: "#f0f0f0",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Row Label
+                  </TableCell>
+                  {((tableData && tableData[0]?.newColData) || []).map(
+                    (column, index) => (
+                      <TableCell
+                        key={index}
+                        sx={{
+                          backgroundColor: "#f0f0f0",
+                          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {column}
+                      </TableCell>
+                    )
+                  )}
+                  <TableCell
+                    sx={{
+                      backgroundColor: "#f0f0f0",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Total
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {((tableData && tableData[0]?.newRowData) || [])
+                  .filter((row) => row.label !== "totalMonthlyCounts") // Filter out the entry with label "totalMonthlyCounts"
+                  .map((row, rowIndex) => (
+                    <TableRow key={rowIndex}>
+                      <TableCell>{row.label}</TableCell>
+                      {tableData &&
+                        tableData[0]?.newColData.map((month) => (
+                          <TableCell key={`${rowIndex}-${month}`}>
+                            {row[month]}
+                          </TableCell>
+                        ))}
+                      <TableCell>{row.total}</TableCell>
+                    </TableRow>
+                  ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </React.Fragment>
       </div>
       <TablePagination
         rowsPerPageOptions={[10, 25, 100]}
         component="div"
-        count={rows.length}
+        count={0}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={(e, newPage) => setPage(newPage)}
@@ -471,5 +417,3 @@ export default function StickyHeadTable() {
     </Paper>
   );
 }
-
-
